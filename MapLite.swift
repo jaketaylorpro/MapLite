@@ -124,6 +124,12 @@ public class MapLite {
                     case .SQLITE_INTEGER:
                         let intVal=Int(sqlite3_column_int(stmt.stmt,i))
                         row=fn(row,.MapLiteInt(intVal))
+                    case .SQLITE_DATE:
+                        let textValPtr = sqlite3_column_text(stmt.stmt,i)
+                        let textVal = String.fromCString(UnsafePointer<Int8>(textValPtr))
+                        let formatter = NSDateFormatter();formatter.dateFormat="yyyy-MM-dd HH:mm:ss"
+                        let date:NSDate = formatter.dateFromString(textVal!)!
+                        row=fn(row,.MapLiteDate(date))
                     case .SQLITE_FLOAT:
                         let floatVal=Float(sqlite3_column_double(stmt.stmt,i))
                         row=fn(row,.MapLiteFloat(floatVal))
@@ -163,6 +169,7 @@ public enum MapLiteValue {
     case MapLiteInt(Int)
     case MapLiteText(String)
     case MapLiteFloat(Float)
+    case MapLiteDate(NSDate)
 }
 public enum MapLiteType: Int32 {
     case SQLITE_INTEGER = 1
@@ -170,6 +177,7 @@ public enum MapLiteType: Int32 {
     case SQLITE_TEXT    = 3
     case SQLITE_BLOB    = 4
     case SQLITE_NULL    = 5
+    case SQLITE_DATE    = 6
 }
 public enum MapLiteIdentity {
     case IdentityColumn
