@@ -121,24 +121,29 @@ public class MapLite {
             //let col_type=sqlite3_column_name(stmt.stmt,i)
             if let (ty,ident,fn)=mapper.maps[colName!] {
                 switch ty {
-                    case .SQLITE_INTEGER:
-                        let intVal=Int(sqlite3_column_int(stmt.stmt,i))
-                        row=fn(row,.MapLiteInt(intVal))
-                    case .SQLITE_DATE:
-                        let textValPtr = sqlite3_column_text(stmt.stmt,i)
-                        let textVal = String.fromCString(UnsafePointer<Int8>(textValPtr))
-                        let formatter = NSDateFormatter();formatter.dateFormat="yyyy-MM-dd HH:mm:ss"
-                        let date:NSDate = formatter.dateFromString(textVal!)!
-                        row=fn(row,.MapLiteDate(date))
-                    case .SQLITE_FLOAT:
-                        let floatVal=Float(sqlite3_column_double(stmt.stmt,i))
-                        row=fn(row,.MapLiteFloat(floatVal))
-                    case .SQLITE_TEXT:
-                        let textValPtr=sqlite3_column_text(stmt.stmt,i)
-                        let textVal=String.fromCString(UnsafePointer<Int8>(textValPtr))
-                        row=fn(row,.MapLiteText(textVal!))
-                    default:
-                        assert(false,"unimplemented mapping type")
+                case .SQLITE_INTEGER:
+                    let intVal=Int(sqlite3_column_int(stmt.stmt,i))
+                    row=fn(row,.MapLiteInt(intVal))
+                case .SQLITE_DATE_NUM: //from julian
+                    let julianDay = sqlite3_column_double(stmt.stmt,i)
+                    let unixSeconds = (julianDay - 2440587.5) * 86400
+                    let date:NSDate = NSDate(timeIntervalSince1970: unixSeconds)
+                    row=fn(row,.MapLiteDate(date))
+                case .SQLITE_DATE_TEXT:
+                    let textValPtr = sqlite3_column_text(stmt.stmt,i)
+                    let textVal = String.fromCString(UnsafePointer<Int8>(textValPtr))
+                    let formatter = NSDateFormatter();formatter.dateFormat="yyyy-MM-dd HH:mm:ss"
+                    let date:NSDate = formatter.dateFromString(textVal!)!
+                    row=fn(row,.MapLiteDate(date))
+                case .SQLITE_FLOAT:
+                    let floatVal=Float(sqlite3_column_double(stmt.stmt,i))
+                    row=fn(row,.MapLiteFloat(floatVal))
+                case .SQLITE_TEXT:
+                    let textValPtr=sqlite3_column_text(stmt.stmt,i)
+                    let textVal=String.fromCString(UnsafePointer<Int8>(textValPtr))
+                    row=fn(row,.MapLiteText(textVal!))
+                default:
+                    assert(false,"unimplemented mapping type")
                 }
             }
         }
@@ -172,12 +177,13 @@ public enum MapLiteValue {
     case MapLiteDate(NSDate)
 }
 public enum MapLiteType: Int32 {
-    case SQLITE_INTEGER = 1
-    case SQLITE_FLOAT   = 2
-    case SQLITE_TEXT    = 3
-    case SQLITE_BLOB    = 4
-    case SQLITE_NULL    = 5
-    case SQLITE_DATE    = 6
+    case SQLITE_INTEGER     = 1
+    case SQLITE_FLOAT       = 2
+    case SQLITE_TEXT        = 3
+    case SQLITE_BLOB        = 4
+    case SQLITE_NULL        = 5
+    case SQLITE_DATE_TEXT   = 6
+    case SQLITE_DATE_NUM    = 7
 }
 public enum MapLiteIdentity {
     case IdentityColumn
